@@ -1,12 +1,6 @@
 // GA.cpp
 #include "GA.h"
-#include "Graph.h"
-#include <iostream>
-#include <algorithm>
-#include <numeric>
-#include <unordered_set>
-#include <iomanip>
-#include <cmath>
+
 // 创建随机数引擎，使用当前时间作为种子
 
 //-----------------------------------------------------------
@@ -67,13 +61,17 @@ void randomswap(vector<int>& route1, vector<int>& route2) {
 //-----------------------------------------------------------
 individual::individual(int num_customers, int car_number, int vehicle_capacity): sumod(0.0), K(car_number), Q(vehicle_capacity), V(num_customers + 1) {
     e = INFINITY;
+    sumod = INFINITY;
     current_load.resize(K, 0);
     // 初始化ifuse，所有客户点初始为未使用
     ifuse.resize(num_customers + 1, false); // 假设0是仓库，1-n是客户
     ifuse[0] = true; // 仓库始终使用
 }
 
+
+
 void individual::printIndividual(const graph& G)const {
+
     // 打印基本属性
     std::cout << "V: " << V << "\n";
     std::cout << "Q: " << Q << "\n";
@@ -108,10 +106,8 @@ void individual::printIndividual(const graph& G)const {
         }
         if (routes.size() > K) return false;
 
-       // cout << e << " " << sumod << endl;
         if (e != sumod) {
             return false;
-            std::cout << "is not valid" << endl;
         }
 
         return true;
@@ -119,42 +115,141 @@ void individual::printIndividual(const graph& G)const {
 
     void individual::initialize(graph& G) {
         routes.resize(K);
-        vector<int> customers(V - 1);
-        iota(customers.begin(), customers.end(), 1);
-
+        const int num_customers = V - 1;
+        std::vector<int> customers(num_customers);
+        std::iota(customers.begin(), customers.end(), 1);
         // 随机打乱客户顺序
-        shuffle(customers.begin(), customers.end(),gen);
+        shuffle(customers.begin(), customers.end(), gen);
+        // 使用list保存路径以便安全删除/添加操作
+        std::list<RouteInfo> temp_routes;
+        std::unordered_map<int, std::list<RouteInfo>::iterator> start_map;
+        std::unordered_map<int, std::list<RouteInfo>::iterator> end_map;
 
-        int current_vehicle = 0;
-        int min_loadv = 0;              // 初始时所有车辆载货量为0，默认选第0辆
-
-        for (int customer : customers) {
-            int count = 0;
-            // 寻找可容纳该客户的车辆（最多尝试K次）
-            while (count < K && current_load[current_vehicle] + G.points[customer]->q > Q) {
-                current_vehicle = (current_vehicle + 1) % K;  // 环形遍历车辆
-                count++;
-            }
-
-            // 如果所有车辆都超载，强制选择载货量最小的车辆
-            if (count == K) {
-                current_vehicle = min_loadv;
-            }
-
-            // 分配客户到车辆
-            routes[current_vehicle].push_back(customer);
-            ifuse[customer] = true;
-            current_load[current_vehicle] += G.points[customer]->q;
-
-            // 更新最小载货车辆序号（遍历所有车辆）
-            min_loadv = 0;
-            for (int i = 1; i < K; ++i) {
-                if (current_load[i] < current_load[min_loadv]) {
-                    min_loadv = i;
-                }
+        // 初始化每个客户为独立路径
+        for (int c : customers) {
+            RouteInfo new_route;
+            new_route.customers.push_back(c);
+            new_route.total_load = G.points[c]->q;
+            new_route.start = c;
+            new_route.end = c;
+            temp_routes.push_back(new_route);
+            auto it = --temp_routes.end();
+            start_map[c] = it;
+            end_map[c] = it;
+        }
+      
+        // 计算所有节约值
+        std::vector<std::pair<double, std::pair<int, int>>> savings;
+        for (int i = 1; i <= num_customers; ++i) {
+            for (int j = i + 1; j <= num_customers; ++j) {
+                double save_ij = G.dist_matrix[i][0] + G.dist_matrix[0][j] - G.dist_matrix[i][j];
+                double save_ji = G.dist_matrix[j][0] + G.dist_matrix[0][i] - G.dist_matrix[j][i];
+                savings.emplace_back(save_ij, std::make_pair(i, j));
+                savings.emplace_back(save_ji, std::make_pair(j, i));
             }
         }
 
+        std::sort(savings.begin(), savings.end(), std::greater<>());
+        // 合并路径直到达到K辆或无法合并
+        constexpr double merge_prob = 0.9; // 85%概率接受最优合并
+        for (const auto& [saving_val, nodes] : savings) {
+           /*  添加随机跳过机制*/
+            if (std::uniform_real_distribution<double>(0, 1)(gen) > merge_prob) {
+                continue;
+            }
+            if (temp_routes.size() <= K) break;
+            
+            int i = nodes.first;  // 路径A的末端
+            int j = nodes.second; // 路径B的起点
+
+            if (!end_map.count(i) || !start_map.count(j)) continue;
+
+            auto routeA_it = end_map[i];
+            auto routeB_it = start_map[j];
+            if (routeA_it == routeB_it) continue;
+            
+            // 提前保存路径信息
+            const auto& routeA = *routeA_it;
+            const auto& routeB = *routeB_it;
+            const int routeA_start = routeA.start;
+            const int routeA_end = routeA.end;
+            const int routeB_start = routeB.start;
+            const int routeB_end = routeB.end;
+
+            // 检查容量约束
+            if (routeA.total_load + routeB.total_load > Q) continue;
+           
+            // 创建合并后的路径
+            RouteInfo merged;
+            merged.customers = routeA.customers;
+            merged.customers.insert(merged.customers.end(),
+                routeB.customers.begin(),
+                routeB.customers.end());
+            merged.total_load = routeA.total_load + routeB.total_load;
+            merged.start = routeA_start;
+            merged.end = routeB_end;
+
+            // 删除原路径并更新哈希表
+            temp_routes.erase(routeA_it);
+            temp_routes.erase(routeB_it);
+            start_map.erase(routeA_start);
+            end_map.erase(routeA_end);
+            start_map.erase(routeB_start);
+            end_map.erase(routeB_end);
+
+            // 插入新路径
+            temp_routes.push_back(merged);
+            auto merged_it = --temp_routes.end();
+            start_map[merged.start] = merged_it;
+            end_map[merged.end] = merged_it;
+            
+        }
+       
+        // 将结果分配到车辆路径
+        int route_idx = 0;
+        for (auto& route : temp_routes) {
+            if (route_idx >= K) break;
+            current_load[route_idx] = route.total_load;
+            routes[route_idx++] = std::move(route.customers);          
+        }
+  
+        // 处理剩余车辆（若有）
+        while (route_idx < K) {
+            routes[route_idx++].clear();
+        }
+
+        // 标记已使用的客户
+        std::fill(ifuse.begin(), ifuse.end(), false);
+        for (auto& route : routes) {
+            for (int c : route) {
+                ifuse[c] = true;
+            }
+        }
+       
+        int min_loadv = 0;              
+        for (int i = 1; i < K; ++i) {
+            if (current_load[i] < current_load[min_loadv]) {
+                min_loadv = i;
+            }
+        }
+        int current_vehicle = min_loadv;
+        for (int customer : customers) {
+            if (ifuse[customer] == false)
+            {
+                // 分配客户到车辆
+                routes[current_vehicle].push_back(customer);
+                ifuse[customer] = true;
+                current_load[current_vehicle] += G.points[customer]->q;
+
+                // 更新最小载货车辆序号（遍历所有车辆）
+                min_loadv = 0;
+                for (int i = 1; i < K; ++i) {
+                    if (current_load[i] < current_load[min_loadv]) {
+                        min_loadv = i;
+                    }
+                }
+            }
+        }
         evaluate(G);
     }
 
@@ -167,10 +262,8 @@ void individual::evaluate(graph& G) {
 
     sumod = 0.0;
     e = 0;
-    // 清空现有距离矩阵
-    dmatrix.clear();
-    dmatrix.resize(ifuse.size(), vector<int>(ifuse.size(), 0));
     int count = 0;
+    
     for (const auto& route : routes)
     {
   
@@ -179,24 +272,27 @@ void individual::evaluate(graph& G) {
         if (route.empty()) continue;
 
         // 从仓库出发到第一个客户
-        dist += G.get_distance(0, route[0]);
-        dmatrix[0][route[0]] = G.get_distance(0, route[0]);
+        dist += G.dist_matrix[0][route[0]];
         demand += G.points[route[0]]->q;
         // 客户之间的移动
         for (size_t i = 1; i < route.size(); ++i)
         {
-            dist += G.get_distance(route[i - 1], route[i]);
+            dist += G.dist_matrix[route[i - 1]][ route[i]];
             demand += G.points[route[i]]->q;
-            dmatrix[route[i - 1]][route[i]] = G.get_distance(route[i - 1], route[i]);
+            
         }
 
         // 从最后一个客户返回仓库
-        dist += G.get_distance(route.back(), 0);
-        dmatrix[route.back()][0] = G.dist_matrix[route.back()][0];
+        dist += G.dist_matrix[route.back()][0];
         current_load[count] = demand;
         sumod += dist;// 路径长度加到总值
         e += dist + ((demand > Q) ? G.p * (demand - Q) : 0);//路径长度加到总评估值
         count++;
+    }
+    for (int c = 0; c < V; c++)
+    {
+        if (!ifuse[c])
+            e = INFINITY;
     }
 }
 
@@ -278,15 +374,12 @@ void individual::repair_overload_routes(graph& G)
             max_loadv = i;
         }
     }
-
+    
    while ( !nodes.empty()) {
         
 
         if ((current_load[max_loadv]< Q || current_load[min_loadv] > Q)&& nodes.empty())break;
-        routes[min_loadv].push_back(nodes.back());
-        current_load[min_loadv] += G.points[routes[min_loadv].back()]->q;
-        nodes.pop_back();
-        if (nodes.empty())break;
+     
          min_loadv = 0, max_loadv = 0;
         for (int i = 1; i < K; ++i) {
             if (current_load[i] < current_load[min_loadv]) {
@@ -301,6 +394,16 @@ void individual::repair_overload_routes(graph& G)
             nodes.push_back(routes[max_loadv].back());
             routes[max_loadv].pop_back();
         }
+        std::sort(nodes.begin(), nodes.end(),
+            [&](const int& a, const int& b) {
+                // 降序排列：更大的 q 值排在前面
+                return G.points[a]->q > G.points[b]->q;
+            }
+        );
+
+        routes[min_loadv].push_back(nodes.back());
+        current_load[min_loadv] += G.points[nodes.back()]->q;
+        nodes.pop_back();
 
          min_loadv = 0, max_loadv = 0;
         for (int i = 1; i < K; ++i) {
@@ -331,7 +434,7 @@ bool compareByE(const individual& I1, const individual& I2) {
     return I1.e < I2.e;
 }
 
-std::vector<individual> crossover(std::vector<individual>& parents, graph& G) {
+std::vector<individual> crossover(std::vector<individual>& parents,int need, graph& G) {
     vector<individual> crossresult;
     int i = 0;
 
@@ -343,6 +446,8 @@ std::vector<individual> crossover(std::vector<individual>& parents, graph& G) {
 
             crossresult.push_back(*it);
             it = parents.erase(it);         // 正确移除并更新迭代器
+            i++;
+            if (i >= need)return crossresult;
         }
         else {
             ++it;
@@ -408,9 +513,9 @@ std::vector<individual> crossover(std::vector<individual>& parents, graph& G) {
                             // 检查所有可能插入位置
                             for (size_t i = 1; i < route.size(); ++i) {
                                 double increase =
-                                    G.get_distance(route[i - 1], cust) +
-                                    G.get_distance(cust, route[i]) -
-                                    G.get_distance(route[i - 1], route[i]);
+                                    G.dist_matrix[route[i - 1]][cust] +
+                                    G.dist_matrix[cust][route[i]] -
+                                    G.dist_matrix[route[i - 1]] [route[i]];
 
                                 if (increase < min_increase) {
                                     min_increase = increase;
@@ -421,14 +526,14 @@ std::vector<individual> crossover(std::vector<individual>& parents, graph& G) {
 
                             // 检查路径首尾位置
                             double start_increase =
-                                G.get_distance(0, cust) +
-                                G.get_distance(cust, route[0]) -
-                                G.get_distance(0, route[0]);
+                                G.dist_matrix[0][cust] +
+                                G.dist_matrix[cust][route[0]] -
+                                G.dist_matrix[0][ route[0]];
 
                             double end_increase =
-                                G.get_distance(route.back(), cust) +
-                                G.get_distance(cust, 0) -
-                                G.get_distance(route.back(), 0);
+                                G.dist_matrix[route.back()][cust] +
+                                G.dist_matrix[cust][0] -
+                                G.dist_matrix[route.back()][0];
 
                             if (start_increase < min_increase) {
                                 min_increase = start_increase;
@@ -468,44 +573,54 @@ std::vector<individual> crossover(std::vector<individual>& parents, graph& G) {
 
                 crossresult.push_back(*parent);
                 crossresult.back().evaluate(G);
+                i++;
+                if (i >= need)return crossresult;
 
             }
         }
         else if (parents.size() == 1) {
             crossresult.push_back(parents.back());
             parents.pop_back();
+            i++;
+            if (i >= need)return crossresult;
         }
     }
     return crossresult;
 
 }
 
-int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G, const individual* best_valid_individual) {
+int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_best ) {
     vector<individual>generation_1;
     vector<individual>generation_2;
-    int bestresult = 2147483647;
+    // 最终结果处理部分修改：
+    individual local_best(VNum - 1, CarNum, MaxLoad);
+    int answer = INFINITY;
     for (int i = 0; i < 50; i++)
     {
         individual I(VNum - 1, CarNum, MaxLoad);
         I.initialize(G);
         I.repair_overload_routes(G);
-        //if (I.is_valid(G))
         generation_1.push_back(I);
-        //else i--;
 
     }
-    G.p=50 * G.avg_dist / G.avg_q;
+    //自适应调参
+    G.p=500 * G.avg_dist / G.avg_q;
     double min_output = G.avg_dist / G.avg_q;
-    PIDController pid_p(7*min_output, 100 * min_output , 0, -0.1*min_output, 0.1*min_output);
+    PIDController pid_p(7*min_output, 10 * min_output , 0, -8*min_output, 8*min_output);
     G.self_adaptation(generation_1,pid_p);
-    sort(generation_1.begin(), generation_1.end(), compareByE);
-    bestresult = generation_1[0].sumod;
-    cout << "第" << 1 << "代的最佳结果" << bestresult << "是否合法" << generation_1[0].is_valid(G) <<"违法比例"<<G.invalid_rate<<
-        endl;
+    //初始化答案
+    std::sort(generation_1.begin(), generation_1.end(), compareByE);
+    answer = generation_1[0].sumod;
+    local_best = generation_1[0];
+    if(out_best.routes.empty())
+        out_best = local_best;
+    std::cout << answer << endl;
+    //开始迭代
+ 
     for (int n = 0; n < 1000; n++)
     {
-        //保留优秀样本
-        for (int i = 0; i < 10; i++)
+        /*保留优秀样本*/
+        for (int i = 0; i < 5; i++)
         {
             generation_1[i].mutate(G);
            
@@ -519,39 +634,44 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G, const individual* 
         }
 
         //增加交叉繁殖和变异后样本
-
-        vector <individual>crosresult = move(crossover(generation_1, G));
+        int need = 45;
+        vector <individual>crosresult = move(crossover(generation_1, need, G));
         for (individual I : crosresult)
         {
-
             generation_2.push_back(I.mutate(G));
             if (generation_2.size() >= 50)break;
         }
 
-    
+        //准备下一代
         generation_1 = move(generation_2);
         G.self_adaptation(generation_1,pid_p);
-
-        sort(generation_1.begin(), generation_1.end(), compareByE);
-
-        bestresult = (generation_1[0].sumod < bestresult) ? generation_1[0].sumod : bestresult;
-
-       
+        std::sort(generation_1.begin(), generation_1.end(), compareByE);
+ 
+        for (auto& I : generation_1) {
+            if (I.is_valid(G)) {
+                if (I.sumod < local_best.sumod) {
+                    local_best = I;
+                    answer = I.sumod;
+                    if (answer < out_best.sumod)
+                        out_best = local_best;
+                }
+            }
+        }
     }
     // 在原有循环后添加异常处理
     bool found_valid = false;
-    int answer;
-    cout << "第1001代的最佳结果" << bestresult << "是否合法" << generation_1[0].is_valid(G) << "违法比例" << G.invalid_rate << endl;
-    for (const individual& I : generation_1)  // 使用const引用避免修改
-    {
-        if (I.is_valid(G))
-        {   
-        
-            if (best_valid_individual==nullptr||best_valid_individual->sumod > I.sumod)
-                best_valid_individual = &I;
-            answer = I.sumod;// 修正函数调用方式
+   //寻找合法的最好结果
+    for ( auto& I : generation_1) {
+        if (I.is_valid(G)) {
             found_valid = true;
-            break;  // 找到第一个合法个体立即退出
+            if ( I.sumod < local_best.sumod) {
+                local_best = I;
+                answer = I.sumod;
+                if (answer < out_best.sumod)
+                    out_best = local_best;
+            }   
+            std::cout << "最佳结果" << answer << "有效" << " 无效比例" << G.invalid_rate << endl;
+            return answer;
         }
     }
 
@@ -559,22 +679,28 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G, const individual* 
     {
         // 尝试修复直到找到有效个体或达到某个条件
         while(  individual::count < 50000  ) {
-            generation_1[0].repair_overload_routes(G);
-            if (generation_1[0].is_valid(G)) {
-                answer = generation_1[0].sumod;
-                if (best_valid_individual->sumod > generation_1[0].sumod)
-                    best_valid_individual = &generation_1[0];
-                break;
+            for (int i = 0; i < 10; i++)
+            {
+                generation_1[i].repair_overload_routes(G);
+
+                if (generation_1[i].is_valid(G)) {
+                    found_valid = true;
+                    if ( generation_1[i].sumod < local_best.sumod) {
+                        local_best = generation_1[i];
+                        answer = generation_1[i].sumod;
+                        if (answer < out_best.sumod)
+                            out_best = local_best;
+                    }
+
+                    std::cout << "最佳结果" << answer << "有效"  << " 无效比例" << G.invalid_rate << endl;
+                    return answer;
+                }
+                std::sort(generation_1.begin(), generation_1.end(), compareByE);
             }
         }
         
     }
-    //if (!found_valid) {
-    //    // 如果仍然没有找到有效个体，抛出异常或返回一个默认构造的个体
-    //    throw std::runtime_error("No valid individual found");
-    //    // 或者
-    //    // return individual(); // 假设individual类有默认构造函数
-    //}
+
     return answer;
 
 }

@@ -27,7 +27,7 @@ struct point {
 class graph {
 public:
     std::vector<point*> points;
-    std::vector<std::vector<int>> dist_matrix;
+    std::vector<std::vector<double>> dist_matrix;
     double p;//³Í·£ÏµÊý
     int avg_q;
     double avg_dist, avg_e, min_e;

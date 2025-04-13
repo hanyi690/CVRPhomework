@@ -44,16 +44,21 @@ double calculateDistance(point* p, int i, int j) {
 
 // graph 构造函数
 graph::graph(point* p, int num_points) {
-    const double target_invalid_rate = 0.3; // 目标不合法比例30%
+    const double target_invalid_rate = 0.2; // 目标不合法比例20%
     avg_dist = 0;
     avg_q = 0;
+    avg_e = 0;
+    invalid_count = 0;
+    invalid_rate = 0;
+    min_e = INFINITY;
+    pc1 = 0.9, pc2 = 0.4, pm1 = 0.1, pm2 = 0.001;
     for (int i = 0; i < num_points; ++i) {
         points.push_back(&p[i]);
         avg_q += p[i].q;
     }
     avg_q /= (num_points - 1);
 
-    dist_matrix.resize(num_points, std::vector<int>(num_points, 0));
+    dist_matrix.resize(num_points, std::vector<double>(num_points, 0));
     for (int i = 0; i < num_points; ++i) {
         for (int j = 0; j < num_points; ++j) {
             if (i == j) {
@@ -82,7 +87,6 @@ void graph::self_adaptation(std::vector<individual> generation,PIDController& pi
 
     min_e = INFINITY;
     avg_e = 0;
-    pc1 = 0.9, pc2 = 0.4, pm1 = 0.1, pm2 = 0.001;
     invalid_count = 0;
     for (const individual& I : generation) {
         min_e = std::min(I.e, min_e);
@@ -98,7 +102,7 @@ void graph::self_adaptation(std::vector<individual> generation,PIDController& pi
     p += new_p;
     double min_output = avg_dist / avg_q;
     if (p < min_output)p = min_output;
-    else if (p > 100 * min_output) p = 100 * min_output;
+    else if (p > 20000 * min_output) p = 20000 * min_output;
 
 
 
