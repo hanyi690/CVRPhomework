@@ -1,39 +1,39 @@
 // GA.cpp
 #include "GA.h"
 
-// ´´½¨Ëæ»úÊıÒıÇæ£¬Ê¹ÓÃµ±Ç°Ê±¼ä×÷ÎªÖÖ×Ó
+// åˆ›å»ºéšæœºæ•°å¼•æ“ï¼Œä½¿ç”¨å½“å‰æ—¶é—´ä½œä¸ºç§å­
 
 //-----------------------------------------------------------
-// ¹¤¾ßº¯ÊıÊµÏÖ
+// å·¥å…·å‡½æ•°å®ç°
 //-----------------------------------------------------------
 using namespace std;
 random_device rd;
-mt19937 gen(rd()); // Éú³ÉÒ»¸öÃ·É­Ğı×ªËã·¨µÄËæ»úÊıÒıÇæ
+mt19937 gen(rd()); // ç”Ÿæˆä¸€ä¸ªæ¢…æ£®æ—‹è½¬ç®—æ³•çš„éšæœºæ•°å¼•æ“
 double generateRandomNumber() {
   
-    uniform_real_distribution<> dis(0.0, 1.0); // ÉèÖÃÉú³ÉµÄËæ»úÊı·¶Î§Îª 0 µ½ 1
+    uniform_real_distribution<> dis(0.0, 1.0); // è®¾ç½®ç”Ÿæˆçš„éšæœºæ•°èŒƒå›´ä¸º 0 åˆ° 1
 
-    // ·µ»ØÉú³ÉµÄËæ»úÊı
+    // è¿”å›ç”Ÿæˆçš„éšæœºæ•°
     return dis(gen);
 }
 
-// ¾²Ì¬³ÉÔ±¶¨Òå
+// é™æ€æˆå‘˜å®šä¹‰
 int individual::count = 0;
 
 
 
 void randomswap(vector<int>& route1, vector<int>& route2) {
-    // Èç¹ûÈÎÒ»Â·¾¶Îª¿Õ£¬Ö±½Ó·µ»Ø
+    // å¦‚æœä»»ä¸€è·¯å¾„ä¸ºç©ºï¼Œç›´æ¥è¿”å›
     if (route1.empty() || route2.empty()) return;
 ;
-    // Ëæ»úÑ¡Ôñroute1ÖĞµÄÆ¬¶Î [start1, end1]
+    // éšæœºé€‰æ‹©route1ä¸­çš„ç‰‡æ®µ [start1, end1]
     uniform_int_distribution<> dis1(0, route1.size() - 1);
     int start1 = dis1(gen);
     int end1 = dis1(gen);
     if (start1 > end1) swap(start1, end1);
     int len1 = end1 - start1 + 1;
 
-    // Ëæ»úÑ¡Ôñroute2ÖĞµÄÆ¬¶Î [start2, end2]
+    // éšæœºé€‰æ‹©route2ä¸­çš„ç‰‡æ®µ [start2, end2]
     uniform_int_distribution<> dis2(0, route2.size() - 1);
     int start2 = dis2(gen);
     int end2 = dis2(gen);
@@ -41,43 +41,43 @@ void randomswap(vector<int>& route1, vector<int>& route2) {
     int len2 = end2 - start2 + 1;
 
 
-    // Ö´ĞĞ½»»»
+    // æ‰§è¡Œäº¤æ¢
 
     vector<int> temp1(route1.begin() + start1, route1.begin() + end1 + 1);
     vector<int> temp2(route2.begin() + start2, route2.begin() + end2 + 1);
 
-    // Ìæ»»route1ÖĞµÄÆ¬¶Î
+    // æ›¿æ¢route1ä¸­çš„ç‰‡æ®µ
     route1.erase(route1.begin() + start1, route1.begin() + end1 + 1);
     route1.insert(route1.begin() + start1, temp2.begin(), temp2.end());
 
-    // Ìæ»»route2ÖĞµÄÆ¬¶Î
+    // æ›¿æ¢route2ä¸­çš„ç‰‡æ®µ
     route2.erase(route2.begin() + start2, route2.begin() + end2 + 1);
     route2.insert(route2.begin() + start2, temp1.begin(), temp1.end());
 
 }
 
 //-----------------------------------------------------------
-// individual ³ÉÔ±º¯ÊıÊµÏÖ
+// individual æˆå‘˜å‡½æ•°å®ç°
 //-----------------------------------------------------------
 individual::individual(int num_customers, int car_number, int vehicle_capacity): sumod(0.0), K(car_number), Q(vehicle_capacity), V(num_customers + 1) {
     e = INFINITY;
     sumod = INFINITY;
     current_load.resize(K, 0);
-    // ³õÊ¼»¯ifuse£¬ËùÓĞ¿Í»§µã³õÊ¼ÎªÎ´Ê¹ÓÃ
-    ifuse.resize(num_customers + 1, false); // ¼ÙÉè0ÊÇ²Ö¿â£¬1-nÊÇ¿Í»§
-    ifuse[0] = true; // ²Ö¿âÊ¼ÖÕÊ¹ÓÃ
+    // åˆå§‹åŒ–ifuseï¼Œæ‰€æœ‰å®¢æˆ·ç‚¹åˆå§‹ä¸ºæœªä½¿ç”¨
+    ifuse.resize(num_customers + 1, false); // å‡è®¾0æ˜¯ä»“åº“ï¼Œ1-næ˜¯å®¢æˆ·
+    ifuse[0] = true; // ä»“åº“å§‹ç»ˆä½¿ç”¨
 }
 
 
 
 void individual::printIndividual(const graph& G)const {
 
-    // ´òÓ¡»ù±¾ÊôĞÔ
+    // æ‰“å°åŸºæœ¬å±æ€§
     std::cout << "V: " << V << "\n";
     std::cout << "Q: " << Q << "\n";
     std::cout << "K: " << K << "\n";
 
-    // ´òÓ¡ ifuse Êı×é
+    // æ‰“å° ifuse æ•°ç»„
     std::cout << "ifuse: [";
     for (size_t i = 0; i <ifuse.size(); ++i) {
         std::cout << ifuse[i];
@@ -98,7 +98,7 @@ void individual::printIndividual(const graph& G)const {
     }
 }
     bool individual::is_valid(const graph & G) const {
-        // ¼ì²éËùÓĞ¿Í»§ÊÇ·ñ¶¼±»·şÎñ
+        // æ£€æŸ¥æ‰€æœ‰å®¢æˆ·æ˜¯å¦éƒ½è¢«æœåŠ¡
         for (int i = 1; i < G.points.size(); i++)
         {
             if (!ifuse[i]) return false;
@@ -118,14 +118,14 @@ void individual::printIndividual(const graph& G)const {
         const int num_customers = V - 1;
         std::vector<int> customers(num_customers);
         std::iota(customers.begin(), customers.end(), 1);
-        // Ëæ»ú´òÂÒ¿Í»§Ë³Ğò
+        // éšæœºæ‰“ä¹±å®¢æˆ·é¡ºåº
         shuffle(customers.begin(), customers.end(), gen);
-        // Ê¹ÓÃlist±£´æÂ·¾¶ÒÔ±ã°²È«É¾³ı/Ìí¼Ó²Ù×÷
+        // ä½¿ç”¨listä¿å­˜è·¯å¾„ä»¥ä¾¿å®‰å…¨åˆ é™¤/æ·»åŠ æ“ä½œ
         std::list<RouteInfo> temp_routes;
         std::unordered_map<int, std::list<RouteInfo>::iterator> start_map;
         std::unordered_map<int, std::list<RouteInfo>::iterator> end_map;
 
-        // ³õÊ¼»¯Ã¿¸ö¿Í»§Îª¶ÀÁ¢Â·¾¶
+        // åˆå§‹åŒ–æ¯ä¸ªå®¢æˆ·ä¸ºç‹¬ç«‹è·¯å¾„
         for (int c : customers) {
             RouteInfo new_route;
             new_route.customers.push_back(c);
@@ -138,7 +138,7 @@ void individual::printIndividual(const graph& G)const {
             end_map[c] = it;
         }
       
-        // ¼ÆËãËùÓĞ½ÚÔ¼Öµ
+        // è®¡ç®—æ‰€æœ‰èŠ‚çº¦å€¼
         std::vector<std::pair<double, std::pair<int, int>>> savings;
         for (int i = 1; i <= num_customers; ++i) {
             for (int j = i + 1; j <= num_customers; ++j) {
@@ -150,17 +150,17 @@ void individual::printIndividual(const graph& G)const {
         }
 
         std::sort(savings.begin(), savings.end(), std::greater<>());
-        // ºÏ²¢Â·¾¶Ö±µ½´ïµ½KÁ¾»òÎŞ·¨ºÏ²¢
-        constexpr double merge_prob = 0.9; // 85%¸ÅÂÊ½ÓÊÜ×îÓÅºÏ²¢
+        // åˆå¹¶è·¯å¾„ç›´åˆ°è¾¾åˆ°Kè¾†æˆ–æ— æ³•åˆå¹¶
+        constexpr double merge_prob = 0.9; // 85%æ¦‚ç‡æ¥å—æœ€ä¼˜åˆå¹¶
         for (const auto& [saving_val, nodes] : savings) {
-           /*  Ìí¼ÓËæ»úÌø¹ı»úÖÆ*/
+           /*  æ·»åŠ éšæœºè·³è¿‡æœºåˆ¶*/
             if (std::uniform_real_distribution<double>(0, 1)(gen) > merge_prob) {
                 continue;
             }
             if (temp_routes.size() <= K) break;
             
-            int i = nodes.first;  // Â·¾¶AµÄÄ©¶Ë
-            int j = nodes.second; // Â·¾¶BµÄÆğµã
+            int i = nodes.first;  // è·¯å¾„Açš„æœ«ç«¯
+            int j = nodes.second; // è·¯å¾„Bçš„èµ·ç‚¹
 
             if (!end_map.count(i) || !start_map.count(j)) continue;
 
@@ -168,7 +168,7 @@ void individual::printIndividual(const graph& G)const {
             auto routeB_it = start_map[j];
             if (routeA_it == routeB_it) continue;
             
-            // ÌáÇ°±£´æÂ·¾¶ĞÅÏ¢
+            // æå‰ä¿å­˜è·¯å¾„ä¿¡æ¯
             const auto& routeA = *routeA_it;
             const auto& routeB = *routeB_it;
             const int routeA_start = routeA.start;
@@ -176,10 +176,10 @@ void individual::printIndividual(const graph& G)const {
             const int routeB_start = routeB.start;
             const int routeB_end = routeB.end;
 
-            // ¼ì²éÈİÁ¿Ô¼Êø
+            // æ£€æŸ¥å®¹é‡çº¦æŸ
             if (routeA.total_load + routeB.total_load > Q) continue;
            
-            // ´´½¨ºÏ²¢ºóµÄÂ·¾¶
+            // åˆ›å»ºåˆå¹¶åçš„è·¯å¾„
             RouteInfo merged;
             merged.customers = routeA.customers;
             merged.customers.insert(merged.customers.end(),
@@ -189,7 +189,7 @@ void individual::printIndividual(const graph& G)const {
             merged.start = routeA_start;
             merged.end = routeB_end;
 
-            // É¾³ıÔ­Â·¾¶²¢¸üĞÂ¹şÏ£±í
+            // åˆ é™¤åŸè·¯å¾„å¹¶æ›´æ–°å“ˆå¸Œè¡¨
             temp_routes.erase(routeA_it);
             temp_routes.erase(routeB_it);
             start_map.erase(routeA_start);
@@ -197,7 +197,7 @@ void individual::printIndividual(const graph& G)const {
             start_map.erase(routeB_start);
             end_map.erase(routeB_end);
 
-            // ²åÈëĞÂÂ·¾¶
+            // æ’å…¥æ–°è·¯å¾„
             temp_routes.push_back(merged);
             auto merged_it = --temp_routes.end();
             start_map[merged.start] = merged_it;
@@ -205,7 +205,7 @@ void individual::printIndividual(const graph& G)const {
             
         }
        
-        // ½«½á¹û·ÖÅäµ½³µÁ¾Â·¾¶
+        // å°†ç»“æœåˆ†é…åˆ°è½¦è¾†è·¯å¾„
         int route_idx = 0;
         for (auto& route : temp_routes) {
             if (route_idx >= K) break;
@@ -213,12 +213,12 @@ void individual::printIndividual(const graph& G)const {
             routes[route_idx++] = std::move(route.customers);          
         }
   
-        // ´¦ÀíÊ£Óà³µÁ¾£¨ÈôÓĞ£©
+        // å¤„ç†å‰©ä½™è½¦è¾†ï¼ˆè‹¥æœ‰ï¼‰
         while (route_idx < K) {
             routes[route_idx++].clear();
         }
 
-        // ±ê¼ÇÒÑÊ¹ÓÃµÄ¿Í»§
+        // æ ‡è®°å·²ä½¿ç”¨çš„å®¢æˆ·
         std::fill(ifuse.begin(), ifuse.end(), false);
         for (auto& route : routes) {
             for (int c : route) {
@@ -236,12 +236,12 @@ void individual::printIndividual(const graph& G)const {
         for (int customer : customers) {
             if (ifuse[customer] == false)
             {
-                // ·ÖÅä¿Í»§µ½³µÁ¾
+                // åˆ†é…å®¢æˆ·åˆ°è½¦è¾†
                 routes[current_vehicle].push_back(customer);
                 ifuse[customer] = true;
                 current_load[current_vehicle] += G.points[customer]->q;
 
-                // ¸üĞÂ×îĞ¡ÔØ»õ³µÁ¾ĞòºÅ£¨±éÀúËùÓĞ³µÁ¾£©
+                // æ›´æ–°æœ€å°è½½è´§è½¦è¾†åºå·ï¼ˆéå†æ‰€æœ‰è½¦è¾†ï¼‰
                 min_loadv = 0;
                 for (int i =0 ; i < K; ++i) {
                     if (current_load[i] < current_load[min_loadv]) {
@@ -271,10 +271,10 @@ void individual::evaluate(graph& G) {
         int demand = 0;
         if (route.empty()) continue;
 
-        // ´Ó²Ö¿â³ö·¢µ½µÚÒ»¸ö¿Í»§
+        // ä»ä»“åº“å‡ºå‘åˆ°ç¬¬ä¸€ä¸ªå®¢æˆ·
         dist += G.dist_matrix[0][route[0]];
         demand += G.points[route[0]]->q;
-        // ¿Í»§Ö®¼äµÄÒÆ¶¯
+        // å®¢æˆ·ä¹‹é—´çš„ç§»åŠ¨
         for (size_t i = 1; i < route.size(); ++i)
         {
             dist += G.dist_matrix[route[i - 1]][ route[i]];
@@ -282,11 +282,11 @@ void individual::evaluate(graph& G) {
             
         }
 
-        // ´Ó×îºóÒ»¸ö¿Í»§·µ»Ø²Ö¿â
+        // ä»æœ€åä¸€ä¸ªå®¢æˆ·è¿”å›ä»“åº“
         dist += G.dist_matrix[route.back()][0];
         current_load[count] = demand;
-        sumod += dist;// Â·¾¶³¤¶È¼Óµ½×ÜÖµ
-        e += dist + ((demand > Q) ? G.p * (demand - Q) : 0);//Â·¾¶³¤¶È¼Óµ½×ÜÆÀ¹ÀÖµ
+        sumod += dist;// è·¯å¾„é•¿åº¦åŠ åˆ°æ€»å€¼
+        e += dist + ((demand > Q) ? G.p * (demand - Q) : 0);//è·¯å¾„é•¿åº¦åŠ åˆ°æ€»è¯„ä¼°å€¼
         count++;
     }
     for (int c = 0; c < V; c++)
@@ -303,12 +303,12 @@ individual individual::mutate(graph& G) {
 
     if (routes.empty())  return *this;
 
-    // Ëæ»úÑ¡ÔñÒ»ÖÖ±äÒì·½Ê½
+    // éšæœºé€‰æ‹©ä¸€ç§å˜å¼‚æ–¹å¼
     int mutation_type = rand() % 2;
 
     switch (mutation_type)
     {
-    case 0: // ½»»»Â·¾¶ÖĞµÄÁ½¸ö¿Í»§
+    case 0: // äº¤æ¢è·¯å¾„ä¸­çš„ä¸¤ä¸ªå®¢æˆ·
     {
         int route_idx = rand() % routes.size();
         if (routes[route_idx].size() < 2) break;
@@ -318,7 +318,7 @@ individual individual::mutate(graph& G) {
         swap(routes[route_idx][pos1], routes[route_idx][pos2]);
         break;
     }
-    case 1: // ½«Ò»¸ö¿Í»§ÒÆµ½ÁíÒ»ÌõÂ·¾¶
+    case 1: // å°†ä¸€ä¸ªå®¢æˆ·ç§»åˆ°å¦ä¸€æ¡è·¯å¾„
     {
         if (routes.size() < 2) break;
 
@@ -338,20 +338,31 @@ individual individual::mutate(graph& G) {
 
     }
 
-    // ÖØĞÂÆÀ¹À
+    // é‡æ–°è¯„ä¼°
     evaluate(G);
     return *this;
 }
 
 
-    // Æô·¢Ê½ÓÅ»¯£º½«³¬ÔØÂ·¾¶µÄ¿Í»§×ªÒÆµ½ÆäËû³µÁ¾
+    // å¯å‘å¼ä¼˜åŒ–ï¼šå°†è¶…è½½è·¯å¾„çš„å®¢æˆ·è½¬ç§»åˆ°å…¶ä»–è½¦è¾†
 void individual::repair_overload_routes(graph& G)
 {   
     vector<int> nodes;
     int min_loadv = 0, max_loadv = 0;
-    // ¸üĞÂ×îĞ¡ÔØ»õ³µÁ¾ĞòºÅ£¨±éÀúËùÓĞ³µÁ¾£©
+    for (int i = 0; i < K; ++i) {
+        if (current_load[i] < current_load[min_loadv]) {
+            min_loadv = i;
+        }
+        if (current_load[i] > current_load[max_loadv]) {
+            max_loadv = i;
+        }
+    }
     while (current_load[max_loadv] > Q && !routes[max_loadv].empty())
     {
+      
+        current_load[max_loadv] -= G.points[routes[max_loadv].back()]->q;
+        nodes.push_back(routes[max_loadv].back());
+        routes[max_loadv].pop_back();
         min_loadv = 0, max_loadv = 0;
         for (int i = 0; i < K; ++i) {
             if (current_load[i] < current_load[min_loadv]) {
@@ -361,26 +372,12 @@ void individual::repair_overload_routes(graph& G)
                 max_loadv = i;
             }
         }
-        if (current_load[max_loadv]< Q || current_load[min_loadv] > Q)   return;
-
-       
-        current_load[max_loadv] -= G.points[routes[max_loadv].back()]->q;
-        nodes.push_back(routes[max_loadv].back());
-        routes[max_loadv].pop_back();
     }
-    // ¸üĞÂ×îĞ¡ÔØ»õ³µÁ¾ĞòºÅ£¨±éÀúËùÓĞ³µÁ¾£©
-     min_loadv = 0, max_loadv = 0;
-    for (int i = 0; i < routes.size(); ++i) {
-        if (current_load[i] < current_load[min_loadv]) {
-            min_loadv = i;
-        }
-        if (current_load[i] > current_load[max_loadv]) {
-            max_loadv = i;
-        }
-    }
+   
+    
     std::sort(nodes.begin(), nodes.end(),
         [&](const int& a, const int& b) {
-            // ÉıĞòÅÅÁĞ£º¸ü´óµÄ q ÖµÅÅÔÚºóÃæ
+            // å‡åºæ’åˆ—ï¼šæ›´å¤§çš„ q å€¼æ’åœ¨åé¢
             return G.points[a]->q < G.points[b]->q;
         }
     );
@@ -390,8 +387,7 @@ void individual::repair_overload_routes(graph& G)
         current_load[min_loadv] += G.points[nodes.back()]->q;
         nodes.pop_back();
         if (nodes.empty())break;
-       
-         min_loadv = 0, max_loadv = 0;
+        min_loadv = 0;
         for (int i = 0; i < routes.size(); ++i) {
             if (current_load[i] < current_load[min_loadv]) {
                 min_loadv = i;
@@ -407,7 +403,7 @@ void individual::repair_overload_routes(graph& G)
 
 
 //-----------------------------------------------------------
-// ÆäËûº¯ÊıÊµÏÖ
+// å…¶ä»–å‡½æ•°å®ç°
 //-----------------------------------------------------------
 bool compareByR(const individual& I1, const individual& I2) {
     return I1.sumod < I2.sumod;
@@ -428,7 +424,7 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
         if (r_num > pc) {
 
             crossresult.push_back(*it);
-            it = parents.erase(it);         // ÕıÈ·ÒÆ³ı²¢¸üĞÂµü´úÆ÷
+            it = parents.erase(it);         // æ­£ç¡®ç§»é™¤å¹¶æ›´æ–°è¿­ä»£å™¨
             i++;
             if (i >= need)return crossresult;
         }
@@ -440,16 +436,16 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
     while (!parents.empty())
     {
         if (parents.size() >= 2)
-        { // ÏÈ»ñÈ¡×îÇ°Ò»¸öÔªËØ
+        { // å…ˆè·å–æœ€å‰ä¸€ä¸ªå…ƒç´ 
             individual parent1 = parents.front();
-            parents.erase(parents.begin());  // È»ºóÒÆ³ı
+            parents.erase(parents.begin());  // ç„¶åç§»é™¤
 
             individual parent2 = parents.front();
             parents.erase(parents.begin());
 
-            /* µÚÒ»²½£ºËæ»ú½»»»Â·¾¶ */
+            /* ç¬¬ä¸€æ­¥ï¼šéšæœºäº¤æ¢è·¯å¾„ */
             if (!parent1.routes.empty() && !parent2.routes.empty()) {
-                // Ëæ»úÑ¡ÔñÁ½ÌõÂ·¾¶£¨·Ö±ğÀ´×ÔÁ½¸ö¸¸´ú£©
+                // éšæœºé€‰æ‹©ä¸¤æ¡è·¯å¾„ï¼ˆåˆ†åˆ«æ¥è‡ªä¸¤ä¸ªçˆ¶ä»£ï¼‰
                 random_device rd;
                 mt19937 gen(rd());
                 uniform_int_distribution<> dis1(0, parent1.routes.size() - 1);
@@ -457,18 +453,18 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                 int route_idx1 = dis1(gen);
                 int route_idx2 = dis2(gen);
 
-                // Ëæ»ú½»»»Á½ÌõÂ·¾¶²¿·Ö
+                // éšæœºäº¤æ¢ä¸¤æ¡è·¯å¾„éƒ¨åˆ†
                 randomswap(parent1.routes[route_idx1], parent2.routes[route_idx2]);
 
 
             }
 
-            /* µÚ¶ş²½£º¶ÔÁ½¸ö¸¸±¾·Ö±ğÈ¥ÖØºÍ²¹È± */
+            /* ç¬¬äºŒæ­¥ï¼šå¯¹ä¸¤ä¸ªçˆ¶æœ¬åˆ†åˆ«å»é‡å’Œè¡¥ç¼º */
             for (auto* parent : { &parent1, &parent2 }) {
                 unordered_set<int> existing_customers;
                 vector<vector<int>> new_routes;
 
-                // È¥ÖØ´¦Àí
+                // å»é‡å¤„ç†
                 for (auto& route : parent->routes) {
                     vector<int> cleaned_route;
                     for (int cust : route) {
@@ -482,10 +478,10 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                 }
                 parent->routes = new_routes;
 
-                // ²¹È±´¦Àí
+                // è¡¥ç¼ºå¤„ç†
                 for (int cust = 1; cust < parent->ifuse.size(); ++cust) {
                     if (!existing_customers.count(cust)) {
-                        // Ñ°ÕÒ×î¼Ñ²åÈëÎ»ÖÃ
+                        // å¯»æ‰¾æœ€ä½³æ’å…¥ä½ç½®
                         double min_increase = numeric_limits<double>::max();
                         size_t best_route = 0;
                         size_t best_pos = 0;
@@ -493,7 +489,7 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                         for (size_t r = 0; r < parent->routes.size(); ++r) {
                             const auto& route = parent->routes[r];
 
-                            // ¼ì²éËùÓĞ¿ÉÄÜ²åÈëÎ»ÖÃ
+                            // æ£€æŸ¥æ‰€æœ‰å¯èƒ½æ’å…¥ä½ç½®
                             for (size_t i = 1; i < route.size(); ++i) {
                                 double increase =
                                     G.dist_matrix[route[i - 1]][cust] +
@@ -507,7 +503,7 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                                 }
                             }
 
-                            // ¼ì²éÂ·¾¶Ê×Î²Î»ÖÃ
+                            // æ£€æŸ¥è·¯å¾„é¦–å°¾ä½ç½®
                             double start_increase =
                                 G.dist_matrix[0][cust] +
                                 G.dist_matrix[cust][route[0]] -
@@ -530,7 +526,7 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                             }
                         }
 
-                        // Ö´ĞĞ²åÈë
+                        // æ‰§è¡Œæ’å…¥
                         if (parent->routes.empty()) {
                             parent->routes.push_back({ cust });
                         }
@@ -542,9 +538,9 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                     }
                 }
 
-                /* µÚÈı²½£º¸üĞÂ¸¸±¾×´Ì¬ */
+                /* ç¬¬ä¸‰æ­¥ï¼šæ›´æ–°çˆ¶æœ¬çŠ¶æ€ */
                 parent->ifuse.assign(parent->ifuse.size(), false);
-                parent->ifuse[0] = true;  // ²Ö¿â
+                parent->ifuse[0] = true;  // ä»“åº“
 
                 for (auto& route : parent->routes) {
                     for (int cust : route) {
@@ -552,7 +548,7 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
                     }
                 }
 
-                // ÖØĞÂ¼ÆËãÊÊÓ¦¶È
+                // é‡æ–°è®¡ç®—é€‚åº”åº¦
 
                 crossresult.push_back(*parent);
                 crossresult.back().evaluate(G);
@@ -575,7 +571,7 @@ std::vector<individual> crossover(std::vector<individual>& parents,int need, gra
 int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_best ) {
     vector<individual>generation_1;
     vector<individual>generation_2;
-    // ×îÖÕ½á¹û´¦Àí²¿·ÖĞŞ¸Ä£º
+    // æœ€ç»ˆç»“æœå¤„ç†éƒ¨åˆ†ä¿®æ”¹ï¼š
     individual local_best(VNum - 1, CarNum, MaxLoad);
     int answer = INFINITY;
     for (int i = 0; i < 50; i++)
@@ -586,23 +582,23 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_b
         generation_1.push_back(I);
 
     }
-    //×ÔÊÊÓ¦µ÷²Î
+    //è‡ªé€‚åº”è°ƒå‚
     G.p=500 * G.avg_dist / G.avg_q;
     double min_output = G.avg_dist / G.avg_q;
     PIDController pid_p(7*min_output, 10 * min_output , 0, -8*min_output, 8*min_output);
     G.self_adaptation(generation_1,pid_p);
-    //³õÊ¼»¯´ğ°¸
+    //åˆå§‹åŒ–ç­”æ¡ˆ
     std::sort(generation_1.begin(), generation_1.end(), compareByE);
     answer = generation_1[0].sumod;
     local_best = generation_1[0];
     if(out_best.routes.empty())
         out_best = local_best;
     std::cout << answer << endl;
-    //¿ªÊ¼µü´ú
+    //å¼€å§‹è¿­ä»£
  
     for (int n = 0; n < 1000; n++)
     {
-        /*±£ÁôÓÅĞãÑù±¾*/
+        /*ä¿ç•™ä¼˜ç§€æ ·æœ¬*/
         for (int i = 0; i < 5; i++)
         {
             generation_1[i].mutate(G);
@@ -616,7 +612,7 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_b
             generation_2.push_back(generation_1[i]);
         }
 
-        //Ôö¼Ó½»²æ·±Ö³ºÍ±äÒìºóÑù±¾
+        //å¢åŠ äº¤å‰ç¹æ®–å’Œå˜å¼‚åæ ·æœ¬
         int need = 45;
         vector <individual>crosresult = move(crossover(generation_1, need, G));
         for (individual I : crosresult)
@@ -625,7 +621,7 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_b
             if (generation_2.size() >= 50)break;
         }
 
-        //×¼±¸ÏÂÒ»´ú
+        //å‡†å¤‡ä¸‹ä¸€ä»£
         generation_1 = move(generation_2);
         G.self_adaptation(generation_1,pid_p);
         std::sort(generation_1.begin(), generation_1.end(), compareByE);
@@ -641,9 +637,9 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_b
             }
         }
     }
-    // ÔÚÔ­ÓĞÑ­»·ºóÌí¼ÓÒì³£´¦Àí
+    // åœ¨åŸæœ‰å¾ªç¯åæ·»åŠ å¼‚å¸¸å¤„ç†
     bool found_valid = false;
-   //Ñ°ÕÒºÏ·¨µÄ×îºÃ½á¹û
+   //å¯»æ‰¾åˆæ³•çš„æœ€å¥½ç»“æœ
     for ( auto& I : generation_1) {
         if (I.is_valid(G)) {
             found_valid = true;
@@ -653,14 +649,14 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_b
                 if (answer < out_best.sumod)
                     out_best = local_best;
             }   
-            std::cout << "×î¼Ñ½á¹û" << answer << "ÓĞĞ§" << " ÎŞĞ§±ÈÀı" << G.invalid_rate << endl;
+            std::cout << "æœ€ä½³ç»“æœ" << answer << "æœ‰æ•ˆ" << " æ— æ•ˆæ¯”ä¾‹" << G.invalid_rate << endl;
             return answer;
         }
     }
 
     if (!found_valid)
     {
-        // ³¢ÊÔĞŞ¸´Ö±µ½ÕÒµ½ÓĞĞ§¸öÌå»ò´ïµ½Ä³¸öÌõ¼ş
+        // å°è¯•ä¿®å¤ç›´åˆ°æ‰¾åˆ°æœ‰æ•ˆä¸ªä½“æˆ–è¾¾åˆ°æŸä¸ªæ¡ä»¶
         while(  individual::count < 50000  ) {
             for (int i = 0; i < 10; i++)
             {
@@ -675,7 +671,7 @@ int GA(int VNum, point* p, int CarNum, int MaxLoad, graph& G,  individual& out_b
                             out_best = local_best;
                     }
 
-                    std::cout << "×î¼Ñ½á¹û" << answer << "ÓĞĞ§"  << " ÎŞĞ§±ÈÀı" << G.invalid_rate << endl;
+                    std::cout << "æœ€ä½³ç»“æœ" << answer << "æœ‰æ•ˆ"  << " æ— æ•ˆæ¯”ä¾‹" << G.invalid_rate << endl;
                     return answer;
                 }
                 std::sort(generation_1.begin(), generation_1.end(), compareByE);
