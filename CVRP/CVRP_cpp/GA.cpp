@@ -227,7 +227,7 @@ void individual::printIndividual(const graph& G)const {
         }
        
         int min_loadv = 0;              
-        for (int i = 1; i < K; ++i) {
+        for (int i = 0; i < routes.size(); ++i) {
             if (current_load[i] < current_load[min_loadv]) {
                 min_loadv = i;
             }
@@ -243,7 +243,7 @@ void individual::printIndividual(const graph& G)const {
 
                 // 更新最小载货车辆序号（遍历所有车辆）
                 min_loadv = 0;
-                for (int i = 1; i < K; ++i) {
+                for (int i =0 ; i < K; ++i) {
                     if (current_load[i] < current_load[min_loadv]) {
                         min_loadv = i;
                     }
@@ -347,41 +347,13 @@ individual individual::mutate(graph& G) {
     // 启发式优化：将超载路径的客户转移到其他车辆
 void individual::repair_overload_routes(graph& G)
 {   
-    
-    // 更新最小载货车辆序号（遍历所有车辆）
-    int min_loadv = 0,max_loadv=0;
-    for (int i = 1; i < K; ++i) {
-        if (current_load[i] < current_load[min_loadv]) {
-            min_loadv = i;
-        }
-        if (current_load[i] > current_load[max_loadv]) {
-            max_loadv = i;
-        }
-    }
-    if (current_load[max_loadv]< Q || current_load[min_loadv] > Q)   return;
-
     vector<int> nodes;
-    current_load[max_loadv] -= G.points[routes[max_loadv].back()]->q;
-    nodes.push_back(routes[max_loadv].back());
-    routes[max_loadv].pop_back();
+    int min_loadv = 0, max_loadv = 0;
     // 更新最小载货车辆序号（遍历所有车辆）
-     min_loadv = 0, max_loadv = 0;
-    for (int i = 1; i < K; ++i) {
-        if (current_load[i] < current_load[min_loadv]) {
-            min_loadv = i;
-        }
-        if (current_load[i] > current_load[max_loadv]) {
-            max_loadv = i;
-        }
-    }
-    
-   while ( !nodes.empty()) {
-        
-
-        if ((current_load[max_loadv]< Q || current_load[min_loadv] > Q)&& nodes.empty())break;
-     
-         min_loadv = 0, max_loadv = 0;
-        for (int i = 1; i < K; ++i) {
+    while (current_load[max_loadv] > Q && !routes[max_loadv].empty())
+    {
+        min_loadv = 0, max_loadv = 0;
+        for (int i = 0; i < K; ++i) {
             if (current_load[i] < current_load[min_loadv]) {
                 min_loadv = i;
             }
@@ -389,29 +361,40 @@ void individual::repair_overload_routes(graph& G)
                 max_loadv = i;
             }
         }
-        while (current_load[max_loadv] > Q && !routes[max_loadv].empty()) {
-            current_load[max_loadv] -= G.points[routes[max_loadv].back()]->q;
-            nodes.push_back(routes[max_loadv].back());
-            routes[max_loadv].pop_back();
-        }
-        std::sort(nodes.begin(), nodes.end(),
-            [&](const int& a, const int& b) {
-                // 降序排列：更大的 q 值排在前面
-                return G.points[a]->q > G.points[b]->q;
-            }
-        );
+        if (current_load[max_loadv]< Q || current_load[min_loadv] > Q)   return;
 
+       
+        current_load[max_loadv] -= G.points[routes[max_loadv].back()]->q;
+        nodes.push_back(routes[max_loadv].back());
+        routes[max_loadv].pop_back();
+    }
+    // 更新最小载货车辆序号（遍历所有车辆）
+     min_loadv = 0, max_loadv = 0;
+    for (int i = 0; i < routes.size(); ++i) {
+        if (current_load[i] < current_load[min_loadv]) {
+            min_loadv = i;
+        }
+        if (current_load[i] > current_load[max_loadv]) {
+            max_loadv = i;
+        }
+    }
+    std::sort(nodes.begin(), nodes.end(),
+        [&](const int& a, const int& b) {
+            // 升序排列：更大的 q 值排在后面
+            return G.points[a]->q < G.points[b]->q;
+        }
+    );
+   while ( !nodes.empty()) {
+          
         routes[min_loadv].push_back(nodes.back());
         current_load[min_loadv] += G.points[nodes.back()]->q;
         nodes.pop_back();
-
+        if (nodes.empty())break;
+       
          min_loadv = 0, max_loadv = 0;
-        for (int i = 1; i < K; ++i) {
+        for (int i = 0; i < routes.size(); ++i) {
             if (current_load[i] < current_load[min_loadv]) {
                 min_loadv = i;
-            }
-            if (current_load[i] > current_load[max_loadv]) {
-                max_loadv = i;
             }
         }       
             

@@ -19,8 +19,8 @@ int main()
     int count = 0;
     //int a = 0;
     for (auto& path : FileName) {
-       /* a++;
-        if (a != 6 )continue;*/
+        //a++;
+        //if (a !=7  )continue;
         point* p = nullptr;
         int VNum;//包括仓库在内的节点数
         int CarNum;//车辆数
