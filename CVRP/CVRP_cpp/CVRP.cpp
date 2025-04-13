@@ -17,10 +17,8 @@ int main()
     std::cout << "开始求CVRP解" << endl;
     vector<Data> dataset;//解集合
     int count = 0;
-    //int a = 0;
     for (auto& path : FileName) {
-        //a++;
-        //if (a !=7  )continue;
+       
         point* p = nullptr;
         int VNum;//包括仓库在内的节点数
         int CarNum;//车辆数
@@ -30,16 +28,18 @@ int main()
         //读文件完成初始数值
         ReadFile(VNum, CarNum, MaxLoad, p, Optimalvalue, path);
         cout << path << "已知最优" << Optimalvalue << endl;
-
+      
         //构建初始图
         graph G(p, VNum);
+   
         individual best_case(VNum - 1, CarNum, MaxLoad);
         best_case.sumod = INFINITY;
         int invalid_e_count = 0;
+      
         //对每个实例计算25次求平均值
         for (int i = 1; i <= 25; i++)
         {
-
+           
             individual::count = 0;//评估次数置零
             int answer = GA(VNum, p, CarNum, MaxLoad, G, best_case);
             double Error_rate = static_cast<double>(answer - Optimalvalue) / Optimalvalue;
@@ -47,7 +47,7 @@ int main()
 
             std::cout << "评估次数" << individual::count;
             if (individual::count > 50000) invalid_e_count++;
-            std::cout << "实例" << i << " " << answer << " Error_rate" << Error_rate << " ";
+            std::cout << "第" << i << "次 " << answer << " Error_rate" << Error_rate << " ";
             std::cout << i * 4 << "%......" << endl; ;
         }
         std::cout << endl;
